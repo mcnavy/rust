@@ -1,18 +1,25 @@
 use crate::models::Task;
 use std::fs;
 
-const FILE_PATH: &str = "todo.json";
-
 pub fn save_tasks(tasks: &[Task]) {
     let json_task = serde_json::to_string(tasks).expect("Failed to serialize tasks");
-    fs::write(FILE_PATH, json_task).expect("Failed to write tasks to file");
+    fs::write(get_data_path(), json_task).expect("Failed to write tasks to file");
 }
 
 pub fn load_tasks() -> Vec<Task> {
-    let data = fs::read_to_string(FILE_PATH).expect("Failed to read tasks from file");
-    if data.trim().is_empty() {
-        return Vec::new()
+    let path = get_data_path();
+
+    if !path.exists() {
+        return vec![];
     }
-    let tasks: Vec<Task> = serde_json::from_str(&data).expect("Failed to deserialize tasks");
+
+    let data = fs::read_to_string(path).expect("Failed to read tasks from file");
+    let tasks: Vec<Task> = serde_json::from_str(&data).unwrap_or_else(|_| vec![]);
     tasks
 } 
+
+fn get_data_path() -> std::path::PathBuf {
+    let mut path = dirs::home_dir().expect("Can't find home dir");
+    path.push(".todo.json");
+    path
+}
